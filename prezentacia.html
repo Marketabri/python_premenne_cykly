@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cykly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@600;700;800&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F1F3F2; --ink:#141B1E; --muted:#56656A; --line:#DDE4E3; --surface:#FFFFFF;
+  --pet:#0E4C5C; --pet-soft:#D9E8EC;
+  --sun:#B57B05; --sun-soft:#FBEFD2;
+  --ros:#C2405A; --ros-soft:#FADEE3;
+  --ok:#116B4B; --ok-soft:#D7EFE3;
+  --no:#C2405A; --no-soft:#FADEE3;
+  --r:14px;
+  --sans:'Inter Tight',system-ui,sans-serif;
+  --head:'Epilogue','Inter Tight',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:clamp(15px,1.35vw,19px);line-height:1.55;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+#bar{position:fixed;top:0;left:0;right:0;height:44px;display:flex;align-items:center;gap:14px;
+  padding:0 22px;background:rgba(241,243,242,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);z-index:50}
+#bar .chip{font-family:var(--head);font-weight:700;font-size:.72em;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--pet);background:var(--pet-soft);padding:4px 11px;border-radius:100px}
+#bar .homelink{text-decoration:none;color:var(--muted);font-size:1.1em;line-height:1;
+  padding:3px 7px;border-radius:7px;transition:.14s}
+#bar .homelink:hover{background:var(--pet);color:#fff}
+#bar .sp{flex:1}
+#bar .count{font-family:var(--mono);font-size:.75em;color:var(--muted)}
+#prog{position:fixed;top:44px;left:0;height:3px;background:linear-gradient(90deg,var(--pet),var(--sun));
+  z-index:51;width:0;transition:width .35s cubic-bezier(.4,0,.2,1)}
+
+#deck{position:absolute;inset:44px 0 0 0}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+  padding:clamp(20px,3vw,44px) clamp(20px,5vw,80px) 76px;overflow-y:auto}
+.slide.on{display:flex;animation:in .42s cubic-bezier(.22,.9,.3,1)}
+@keyframes in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.slide>*{max-width:1220px;width:100%;margin-inline:auto;flex-shrink:0}
+
+h1{font-family:var(--head);font-weight:800;font-size:clamp(2.1em,5vw,3.4em);line-height:1.05;letter-spacing:-.035em}
+h2{font-family:var(--head);font-weight:700;font-size:clamp(1.4em,3vw,2.05em);line-height:1.14;
+  letter-spacing:-.025em;margin-bottom:.35em}
+h3{font-family:var(--head);font-weight:700;font-size:1.02em;margin-bottom:.25em}
+h4{font-family:var(--head);font-weight:600;font-size:.84em;margin-bottom:.3em}
+.lead{color:var(--muted);font-size:1.02em;max-width:76ch;margin-bottom:.9em}
+.eyebrow{font-family:var(--head);font-size:.72em;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--pet);margin-bottom:.6em}
+strong,b{font-weight:600}
+code,.mono{font-family:var(--mono);font-size:.84em;background:#E3EBEA;color:#0C3D49;
+  padding:1px 6px;border-radius:5px}
+a{color:var(--pet)}
+.small{font-size:.85em;color:var(--muted)}
+
+.divider{background:linear-gradient(140deg,#0A2129 0%,#0E4C5C 58%,#17707F 100%);color:#fff}
+.divider h1{color:#fff}.divider .lead{color:#A9CBD3}
+.divider .num{font-family:var(--mono);font-size:.8em;color:#E0A106;letter-spacing:.2em;margin-bottom:1em}
+
+.title-slide{background:
+  radial-gradient(780px 470px at 6% 4%,var(--pet-soft) 0%,transparent 62%),
+  radial-gradient(700px 500px at 96% 96%,var(--sun-soft) 0%,transparent 60%),var(--bg)}
+.tags{display:flex;flex-wrap:wrap;gap:9px;margin-top:1.6em}
+.tags span{font-family:var(--head);font-size:.78em;font-weight:600;background:var(--surface);
+  border:1px solid var(--line);padding:7px 15px;border-radius:100px}
+
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g21{grid-template-columns:1.15fr .85fr}
+.g12{grid-template-columns:.85fr 1.15fr}
+@media(max-width:900px){.g2,.g3,.g4,.g21,.g12{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px}
+.card.p{border-left:3px solid var(--pet)}
+.card.s{border-left:3px solid var(--sun)}
+.card.r{border-left:3px solid var(--ros)}
+.card p{color:var(--muted);font-size:.94em}
+.ex{margin-top:.5em;font-size:.88em;color:var(--ink);background:var(--sun-soft);border-radius:8px;padding:8px 11px}
+.ex.p{background:var(--pet-soft)}
+.ex.r{background:var(--ros-soft)}
+.badge{font-family:var(--head);font-size:.68em;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 9px;border-radius:100px;background:var(--pet-soft);color:var(--pet);vertical-align:middle}
+.badge.s{background:var(--sun-soft);color:var(--sun)}
+.badge.no{background:var(--no-soft);color:var(--no)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+
+ul.bul{list-style:none}
+ul.bul li{position:relative;padding-left:1.3em;margin-bottom:.42em}
+ul.bul li::before{content:"";position:absolute;left:0;top:.58em;width:7px;height:7px;border-radius:2px;background:var(--pet)}
+ol.num{counter-reset:c;list-style:none}
+ol.num li{counter-increment:c;position:relative;padding-left:2.1em;margin-bottom:.5em}
+ol.num li::before{content:counter(c);position:absolute;left:0;top:.05em;width:1.5em;height:1.5em;border-radius:50%;
+  background:var(--pet);color:#fff;font-family:var(--mono);font-size:.72em;display:grid;place-items:center;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.88em;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--head);font-weight:700;background:#E7EDEC;font-size:.92em}
+tr:last-child td{border-bottom:none}
+td code,th code{font-size:.92em}
+.tc{text-align:center}
+
+.code{font-family:var(--mono);font-size:.78em;line-height:1.7;background:#0D272E;color:#E4EEF0;
+  border-radius:11px;padding:13px 15px;overflow-x:auto;white-space:pre;tab-size:4}
+.code.sm{font-size:.71em;line-height:1.62}
+.code .k{color:#F2B705}
+.code .s{color:#86DFA9}
+.code .n{color:#9FD2FF}
+.code .c{color:#6E8A92;font-style:italic}
+.code .f{color:#6FE3E1}
+.code .e{color:#FF8FA3}
+.code b{color:#fff;font-weight:600}
+.codelabel{font-family:var(--head);font-size:.7em;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.35em}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px}
+.btn{font-family:var(--head);font-weight:700;font-size:.86em;background:var(--pet);color:#fff;border:none;
+  border-radius:9px;padding:9px 16px;cursor:pointer;transition:.15s}
+.btn:hover{background:#0A3B47}
+.btn.ghost{background:var(--surface);color:var(--pet);border:1px solid var(--pet)}
+.btn.ghost:hover{background:var(--pet-soft)}
+.btn.sm{font-size:.78em;padding:6px 12px;border-radius:8px}
+.btn:disabled{opacity:.5;cursor:default}
+.opt{display:block;width:100%;text-align:left;font:inherit;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--pet);background:var(--pet-soft)}
+.opt:disabled{cursor:default}
+.opt.ok{background:var(--ok-soft);border-color:var(--ok);font-weight:500}
+.opt.no{background:var(--no-soft);border-color:var(--no)}
+.fb{display:none;font-size:.88em;margin-top:.7em;padding:10px 13px;border-radius:9px}
+.fb.show{display:block}
+.fb.ok{background:var(--ok-soft);color:#0A4E36}
+.fb.no{background:var(--no-soft);color:#8A2437}
+.score{font-family:var(--mono);font-size:.8em;color:var(--muted);margin-top:.6em}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:13px;align-items:start}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+
+/* ---------- živý beh Pythonu ---------- */
+.run{background:#0D272E;border-radius:12px;overflow:hidden;border:1px solid #163B45}
+.runhead{display:flex;align-items:center;gap:9px;padding:7px 11px;background:#0A1F25;border-bottom:1px solid #163B45}
+.runhead .fname{font-family:var(--mono);font-size:.72em;color:#7FA3AC}
+.runhead .sp{flex:1}
+.runhead .btn{background:#F2B705;color:#22180A;padding:5px 13px;font-size:.74em;border-radius:7px}
+.runhead .btn:hover{background:#FFC72B}
+.runhead .btn.ghost{background:transparent;color:#7FA3AC;border:1px solid #24505C}
+.runhead .btn.ghost:hover{background:#123039;color:#CFE3E7}
+.run textarea{display:block;width:100%;background:transparent;color:#E4EEF0;border:none;resize:vertical;
+  font-family:var(--mono);font-size:.78em;line-height:1.65;padding:11px 14px;tab-size:4;outline:none;
+  min-height:64px;white-space:pre;overflow-wrap:normal;overflow-x:auto}
+.run textarea::selection{background:#1E5C6B}
+.run .inwrap{border-top:1px dashed #24505C;padding:7px 14px 9px}
+.run .inwrap label{font-family:var(--head);font-size:.66em;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:#7FA3AC;display:block;margin-bottom:3px}
+.run .inwrap textarea{min-height:38px;font-size:.75em;padding:2px 0}
+.run .out{border-top:1px solid #163B45;background:#08181D;padding:10px 14px;min-height:52px;
+  font-family:var(--mono);font-size:.77em;line-height:1.6;color:#B9F2CE;white-space:pre-wrap;word-break:break-word}
+.run .out .ph{color:#57757E;font-style:italic}
+.run .out .err{color:#FF8FA3}
+.run .out .load{color:#F2B705}
+.run .out .note{color:#7FA3AC;font-style:italic;display:block;margin-top:.5em}
+.run.wide textarea{min-height:150px}
+
+/* ---------- trasovanie riadkov ---------- */
+.trace{white-space:normal;line-height:1.75}
+.trace .ln{display:block;white-space:pre;border-radius:5px;padding:0 6px;margin:0 -6px;transition:.22s}
+.trace .ln.dim{opacity:.3}
+.trace .ln.no{background:rgba(255,143,163,.14);opacity:.82}
+.trace .ln.yes{background:rgba(134,223,169,.2)}
+.trace .ln .tag{float:right;font-size:.86em;letter-spacing:.04em}
+.trace .ln.no .tag{color:#FF8FA3}
+.trace .ln.yes .tag{color:#86DFA9}
+
+/* ---------- hodnoty z range ---------- */
+.vals{display:flex;flex-wrap:wrap;gap:6px;margin-top:.7em}
+.vals span{font-family:var(--mono);font-size:.82em;background:var(--pet-soft);color:#0C3D49;
+  padding:4px 10px;border-radius:7px}
+.vals span.none{background:var(--no-soft);color:#8A2437;font-style:italic}
+
+/* ---------- krokovanie cyklu ---------- */
+.steps{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.78em;margin-top:.7em}
+.steps th{font-family:var(--head);font-size:.86em;background:#E7EDEC}
+.steps td,.steps th{padding:5px 10px;border-bottom:1px solid var(--line);text-align:right}
+.steps td:first-child,.steps th:first-child{text-align:left}
+.steps tr.last td{background:var(--ok-soft);font-weight:600}
+.steps tr.out td{background:var(--sun-soft)}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.ctrl .lb{font-family:var(--head);font-size:.68em;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);margin-right:2px}
+.ctrl button{font-family:var(--mono);font-size:.76em;padding:6px 13px;border-radius:8px;
+  border:1px solid var(--line);background:#F6F9F8;color:var(--ink);cursor:pointer;transition:.14s}
+.ctrl button:hover{border-color:var(--pet)}
+.ctrl button.on{background:var(--pet);border-color:var(--pet);color:#fff;font-weight:600}
+.outline{font-family:var(--mono);font-size:.8em;background:#0D272E;color:#B9F2CE;
+  border-radius:9px;padding:10px 13px;margin-top:11px;white-space:pre-wrap}
+
+/* ---------- cvičenie: koľkokrát ---------- */
+.evrow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:8px 13px;margin-bottom:7px;transition:.15s}
+.evrow .expr{font-family:var(--mono);font-size:.84em}
+.evrow .btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.evrow button{font-family:var(--mono);font-size:.76em;padding:5px 12px;border-radius:7px;
+  border:1px solid var(--line);background:#F6F9F8;color:var(--ink);cursor:pointer;transition:.14s}
+.evrow button:hover:not(:disabled){border-color:var(--pet);background:var(--pet-soft)}
+.evrow button:disabled{cursor:default;opacity:.35}
+.evrow button.good{opacity:1;background:var(--ok-soft);border-color:var(--ok);color:#0A4E36;font-weight:600}
+.evrow button.bad{opacity:1;background:var(--no-soft);border-color:var(--no);color:#8A2437;font-weight:600}
+.evrow.ok{border-color:#8CCBB4}
+.evrow.no{border-color:#E8A9B6}
+@media(max-width:760px){.evrow{grid-template-columns:1fr}.evrow .btns{justify-content:flex-start}}
+
+/* ---------- doplňovačka ---------- */
+.blank{font-family:var(--mono);font-size:.9em;width:6.5em;padding:2px 7px;border-radius:6px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);text-align:center}
+.blank.ok{border-color:var(--ok);background:var(--ok-soft)}
+.blank.no{border-color:var(--no);background:var(--no-soft)}
+
+.speaking{background:var(--sun-soft);border-radius:6px;box-shadow:0 0 0 4px var(--sun-soft)}
+.ttsbtn{display:inline-flex;align-items:center;gap:7px;font-family:var(--head);font-weight:700;
+  font-size:.72em;letter-spacing:.04em;background:var(--surface);color:var(--pet);
+  border:1px solid var(--line);border-radius:100px;padding:5px 13px 5px 10px;cursor:pointer;transition:.15s}
+.ttsbtn:hover{border-color:var(--pet)}
+.ttsbtn.active{background:var(--pet);color:#fff;border-color:var(--pet)}
+.ttsbtn .eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px;width:15px}
+.ttsbtn .eq i{width:3px;height:35%;background:currentColor;border-radius:1px}
+.ttsbtn.playing .eq i{animation:eqb .9s ease-in-out infinite}
+.ttsbtn.playing .eq i:nth-child(2){animation-duration:.66s;animation-delay:.1s}
+.ttsbtn.playing .eq i:nth-child(3){animation-duration:1.05s;animation-delay:.04s}
+.ttsbtn.playing .eq i:nth-child(4){animation-duration:.74s;animation-delay:.06s}
+.ttsbtn.paused .eq i{animation-play-state:paused}
+@keyframes eqb{0%,100%{height:30%}50%{height:100%}}
+.ttsnote{position:fixed;left:22px;bottom:70px;max-width:330px;background:var(--ink);color:#fff;
+  font-size:.72em;line-height:1.5;padding:11px 14px;border-radius:10px;z-index:60;
+  box-shadow:0 6px 20px rgba(20,27,30,.28)}
+
+#nav{position:fixed;right:22px;bottom:18px;display:flex;gap:8px;z-index:50}
+#nav button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);font-size:19px;cursor:pointer;display:grid;place-items:center;transition:.15s;
+  box-shadow:0 2px 8px rgba(20,27,30,.09)}
+#nav button:hover{background:var(--pet);color:#fff;border-color:var(--pet)}
+#hint{position:fixed;left:22px;bottom:24px;font-size:.75em;color:var(--muted);z-index:50}
+@media(max-width:760px){#hint{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <a class="homelink" href="../../index.html" title="Späť na rozcestník predmetu">←</a>
+  <span class="chip" id="secName">Cykly</span>
+  <span class="sp"></span>
+  <button id="ttsBtn" class="ttsbtn" title="Prečítať slide nahlas (klávesa C)">
+    <span class="eq"><i></i><i></i><i></i><i></i></span><span id="ttsLbl">Čítať</span>
+  </button>
+  <span class="count" id="cnt">1 / 1</span>
+</div>
+<div id="prog"></div>
+
+<div id="deck">
+
+<section class="slide title-slide" data-sec="Úvod">
+  <div class="eyebrow">Python · celok 04</div>
+  <h1>Cykly</h1>
+  <p class="lead" style="margin-top:.7em">Tá istá činnosť desaťkrát, stokrát alebo dovtedy, kým platí podmienka – a v programe zapísaná iba raz. Cyklus je miesto, kde sa z podmienky stáva podmienka pokračovania. Ukážky sa dajú priamo v prezentácii prepísať a spustiť.</p>
+  <div class="tags">
+    <span>🔁 while</span><span>🔢 for a range</span><span>➕ počítadlo a súčet</span>
+    <span>⛔ break · continue</span><span>🔲 vnorené cykly</span><span>🛡️ opakované overenie vstupu</span>
+  </div>
+</section>
+
+<section class="slide" data-sec="Úvod">
+  <h2>Obsah tohto celku</h2>
+  <div class="grid g4" style="margin-top:.6em">
+    <div class="card p"><h3>1 · Opakovanie</h3><p>Prečo sa kód nekopíruje. Cyklus <code>while</code>, jeho štyri časti a nekonečný cyklus.</p></div>
+    <div class="card s"><h3>2 · for a range</h3><p>Cyklus so známym počtom krokov, funkcia <code>range</code> a prechod textom či zoznamom.</p></div>
+    <div class="card r"><h3>3 · Riadenie</h3><p><code>break</code>, <code>continue</code>, vnorené cykly a opakované overovanie vstupu.</p></div>
+    <div class="card"><h3>4 · V praxi</h3><p>Súčet, priemer a maximum zo zadaných hodnôt, zarážka a najčastejšie chyby.</p></div>
+  </div>
+  <p class="small" style="margin-top:1.1em">Nadväzuje na celok 03 – podmienka sa tu používa v novej úlohe: rozhoduje o tom, či sa telo cyklu vykoná ešte raz. Ovládanie: šípky vľavo a vpravo, kláves <code>F</code> zapne celú obrazovku, <code>C</code> prečíta slide nahlas.</p>
+</section>
+
+<!-- ═══════════ 1 · OPAKOVANIE ═══════════ -->
+<section class="slide divider" data-sec="Opakovanie">
+  <div class="num">ČASŤ 01</div>
+  <h1>Opakovanie<br>bez kopírovania</h1>
+  <p class="lead">Kopírovaný riadok sa dá zmeniť len na jednom mieste z desiatich. Cyklus zapíše tú istú činnosť raz a určí, koľkokrát sa má vykonať.</p>
+</section>
+
+<section class="slide" data-sec="Opakovanie">
+  <h2>Ten istý výpis päťkrát</h2>
+  <div class="split">
+    <div>
+      <div class="codelabel">Bez cyklu</div>
+      <div class="code"><span class="f">print</span>(<span class="s">"Meranie 1"</span>)
+<span class="f">print</span>(<span class="s">"Meranie 2"</span>)
+<span class="f">print</span>(<span class="s">"Meranie 3"</span>)
+<span class="f">print</span>(<span class="s">"Meranie 4"</span>)
+<span class="f">print</span>(<span class="s">"Meranie 5"</span>)</div>
+      <div class="ex r">Pri stovke meraní by program mal sto riadkov. Zmena textu znamená sto opráv a stačí jedna zabudnutá, aby výstup nebol konzistentný.</div>
+    </div>
+    <div>
+      <div class="codelabel">S cyklom</div>
+      <div class="code"><span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">1</span>, <span class="n">6</span>):
+    <span class="f">print</span>(<span class="s">"Meranie"</span>, i)</div>
+      <div class="ex p">Dva riadky namiesto piatich a pri stovke meraní sa mení jediné číslo. Premenná <code>i</code> pritom nesie číslo aktuálneho kroku, takže sa dá použiť aj vo výpočte.</div>
+      <div class="ex">Rovnaký zápis ako pri podmienke: riadok cyklu končí <b>dvojbodkou</b> a telo je <b>odsadené</b>. Čo nie je odsadené, do cyklu nepatrí.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Opakovanie">
+  <h2>while – opakovanie, kým podmienka platí</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="Krok 1
+Krok 2
+Krok 3
+Krok 4
+Krok 5
+Hotovo, i ma hodnotu 6">
+      <div class="runhead"><span class="fname">while.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">i = 1
+
+while i &lt;= 5:
+    print("Krok", i)
+    i = i + 1
+
+print("Hotovo, i ma hodnotu", i)</textarea>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Podmienka sa vyhodnocuje <b>pred každým</b> vykonaním tela. Keď prestane platiť, program pokračuje prvým neodsadeným riadkom.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Pri <code>while</code> nie je vopred zrejmé, koľko krokov sa vykoná.</li>
+        <li>Keď podmienka neplatí už na začiatku, telo sa nevykoná ani raz.</li>
+        <li>Po skončení cyklu si premenná ponechá svoju poslednú hodnotu – tu <code>6</code>, nie <code>5</code>.</li>
+      </ul>
+      <div class="ex p">Rozdiel od <code>if</code>: podmienený príkaz sa vyhodnotí raz, cyklus <code>while</code> stále dookola. Zápis sa líši len prvým slovom.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Opakovanie">
+  <h2>Štyri časti každého cyklu</h2>
+  <div class="split">
+    <div>
+      <div class="code"><span class="c"># 1 · príprava pred cyklom</span>
+i = <span class="n">1</span>
+
+<span class="c"># 2 · podmienka pokračovania</span>
+<span class="k">while</span> i &lt;= <span class="n">5</span>:
+    <span class="c"># 3 · telo – čo sa opakuje</span>
+    <span class="f">print</span>(<span class="s">"Krok"</span>, i)
+    <span class="c"># 4 · zmena, ktorá vedie ku koncu</span>
+    i = i + <span class="n">1</span></div>
+      <div class="ex">Skrátený zápis <code>i += 1</code> znamená to isté ako <code>i = i + 1</code> a v cykloch sa používa bežne.</div>
+    </div>
+    <div>
+      <table>
+        <tr><th style="width:8.5em">Časť</th><th>Čo sa stane, keď chýba</th></tr>
+        <tr><td><b>príprava</b></td><td><code>NameError</code> – premenná v podmienke ešte neexistuje</td></tr>
+        <tr><td><b>podmienka</b></td><td><code>SyntaxError</code> – <code>while</code> bez podmienky neexistuje</td></tr>
+        <tr><td><b>telo</b></td><td><code>IndentationError</code> – po dvojbodke musí nasledovať odsadený riadok</td></tr>
+        <tr><td><b>zmena</b></td><td>nekonečný cyklus – podmienka platí navždy</td></tr>
+      </table>
+      <div class="ex r" style="margin-top:12px">Najčastejšia chyba je štvrtá časť. Podmienka nie je pokyn „opakuj päťkrát“, ale otázka, ktorá musí niekedy dostať odpoveď <code>False</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Opakovanie">
+  <h2>Nekonečný cyklus</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="Stale to iste
+Stale to iste
+Stale to iste
+…
+[zastavené] Program beží príliš dlho – pravdepodobne nekonečný cyklus.">
+      <div class="runhead"><span class="fname">nekonecny.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">i = 1
+
+while i &lt;= 5:
+    print("Stale to iste")
+
+print("Sem sa program nikdy nedostane")</textarea>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení – potrvá to niekoľko sekúnd.</span></div>
+    </div>
+    <div>
+      <p class="lead">V tele chýba riadok, ktorý mení <code>i</code>. Podmienka <code>i &lt;= 5</code> preto platí stále a program sa nezastaví sám.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Prezentácia takýto cyklus po chvíli zastaví sama a ohlási to – v PyCharme sa program preruší klávesmi <code>Ctrl + F2</code>.</li>
+        <li>Prvá otázka pri hľadaní príčiny: <b>čo v tele mení hodnotu z podmienky?</b></li>
+        <li>Druhá otázka: mení sa hodnota v <b>správnom smere</b>? Pri <code>i = i - 1</code> sa podmienka <code>i &lt;= 5</code> nikdy nepokazí.</li>
+      </ul>
+      <div class="ex p">Nekonečný cyklus nie je vždy chyba. Zápis <code>while True:</code> s príkazom <code>break</code> vnútri je bežný a vysvetlený v časti 04.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Opakovanie">
+  <h2>Počítadlo a súčet</h2>
+  <div class="split">
+    <div>
+      <div class="code">sucet = <span class="n">0</span>
+i = <span class="n">1</span>
+
+<span class="k">while</span> i &lt;= <span class="n">10</span>:
+    sucet = sucet + i
+    i = i + <span class="n">1</span>
+
+<span class="f">print</span>(<span class="s">"Sucet:"</span>, sucet)</div>
+      <ul class="bul" style="margin-top:.8em;font-size:.93em">
+        <li>Premenná <code>sucet</code> sa pripravuje <b>pred</b> cyklom na hodnotu <code>0</code>.</li>
+        <li>V tele sa iba pripočítava – <code>sucet = sucet + i</code>, skrátene <code>sucet += i</code>.</li>
+        <li>Výpis patrí <b>za</b> cyklus, inak sa vypíše aj každý medzivýsledok.</li>
+      </ul>
+      <div class="ex r">Keby bol riadok <code>sucet = 0</code> vnútri cyklu, hodnota by sa v každom kroku vynulovala a výsledok by bol 10 namiesto 55.</div>
+    </div>
+    <div>
+      <div class="ctrl"><span class="lb">koniec cyklu i &lt;=</span>
+        <button data-st="3">3</button><button data-st="5">5</button>
+        <button data-st="10">10</button>
+      </div>
+      <div class="panel">
+        <h3>Ako sa premenné menia</h3>
+        <div id="stepBox"><p class="small" style="margin-top:.5em">Kliknutím na hodnotu sa vypíše každý krok cyklu.</p></div>
+      </div>
+      <div class="ex p" style="margin-top:12px">Posledný riadok tabuľky ukazuje stav <b>po</b> skončení cyklu. Premenná <code>i</code> je vtedy vždy o jeden krok za hranicou – to je bežné a nie je to chyba.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 2 · FOR A RANGE ═══════════ -->
+<section class="slide divider" data-sec="for a range">
+  <div class="num">ČASŤ 02</div>
+  <h1>for a range</h1>
+  <p class="lead">Keď je počet krokov známy vopred, netreba počítadlo obsluhovať ručne. Cyklus <code>for</code> prechádza hotovou postupnosťou hodnôt.</p>
+</section>
+
+<section class="slide" data-sec="for a range">
+  <h2>Tvar cyklu for</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="0
+1
+2
+3
+4
+Hotovo">
+      <div class="runhead"><span class="fname">for.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">for i in range(5):
+    print(i)
+
+print("Hotovo")</textarea>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <ul class="bul" style="font-size:.94em">
+        <li><code>range(5)</code> dá päť hodnôt, ale začína sa <b>nulou</b> – teda 0, 1, 2, 3, 4.</li>
+        <li>Premenná <code>i</code> dostáva v každom kroku ďalšiu hodnotu automaticky; riadok <code>i = i + 1</code> netreba.</li>
+        <li>Názov premennej je ľubovoľný. Pri počítaní krokov sa zvykne používať <code>i</code>, inak sa volí podľa významu – <code>znak</code>, <code>ziak</code>, <code>mesiac</code>.</li>
+        <li>Po skončení cyklu premenná existuje ďalej a má poslednú hodnotu, tu <code>4</code>.</li>
+      </ul>
+      <div class="ex">Výpis hodnôt od jednotky: <code>range(1, 6)</code>. Prvé číslo je začiatok, druhé je hranica, ktorá sa už <b>nevypisuje</b>.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="for a range">
+  <h2>range – tri spôsoby zápisu</h2>
+  <div class="split">
+    <div>
+      <table>
+        <tr><th style="width:11em">Zápis</th><th>Znamená</th></tr>
+        <tr><td><code>range(n)</code></td><td>od 0 do n bez n</td></tr>
+        <tr><td><code>range(a, b)</code></td><td>od a do b bez b</td></tr>
+        <tr><td><code>range(a, b, k)</code></td><td>od a do b bez b, po krokoch k</td></tr>
+      </table>
+      <div class="ex r" style="margin-top:12px">Horná hranica <b>nikdy nepatrí</b> do výsledku. Na čísla 1 až 10 treba <code>range(1, 11)</code> – toto je najčastejšia chyba o jedna v celom celku.</div>
+      <div class="ex">Krok môže byť aj záporný: <code>range(10, 0, -1)</code> vypíše desiatku až jednotku. Pri zápornom kroku musí byť začiatok väčší ako hranica, inak nevznikne nič.</div>
+    </div>
+    <div>
+      <div class="ctrl"><span class="lb">vyskúšať</span>
+        <button data-rg="5">range(5)</button>
+        <button data-rg="1,6">range(1, 6)</button>
+        <button data-rg="1,11">range(1, 11)</button>
+        <button data-rg="0,21,5">range(0, 21, 5)</button>
+        <button data-rg="10,0,-1">range(10, 0, -1)</button>
+        <button data-rg="5,1">range(5, 1)</button>
+      </div>
+      <div class="panel">
+        <h3>Hodnoty, ktoré cyklus prejde</h3>
+        <div class="vals" id="rgVals"><span class="none">zatiaľ nič nevybrané</span></div>
+        <p class="small" id="rgNote" style="margin-top:.7em">Počet krokov sa dá zistiť aj bez vypisovania – funkciou <code>len(range(...))</code>.</p>
+      </div>
+      <div class="ex p" style="margin-top:12px">Posledná možnosť je past: <code>range(5, 1)</code> bez záporného kroku nevytvorí ani jednu hodnotu, takže telo cyklu sa nevykoná. Program nehlási chybu.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="for a range">
+  <h2>for prechádza aj text a zoznam</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="P
+y
+t
+h
+o
+n
+---
+cervena
+zelena
+modra
+Pocet farieb: 3">
+      <div class="runhead"><span class="fname">prechod.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">slovo = "Python"
+
+for znak in slovo:
+    print(znak)
+
+print("---")
+
+farby = ["cervena", "zelena", "modra"]
+
+for farba in farby:
+    print(farba)
+
+print("Pocet farieb:", len(farby))</textarea>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Cyklus <code>for</code> nie je určený len na čísla. Prechádza <b>postupnosť</b> – a text aj zoznam sú postupnosti.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Pri texte dostáva premenná v každom kroku jeden znak vrátane medzier.</li>
+        <li>Pri zozname jednu položku – v tvare, v akom je v zozname.</li>
+        <li><code>len(...)</code> vráti počet znakov alebo položiek, takže netreba počítadlo.</li>
+      </ul>
+      <div class="ex p">Počítanie znakov v texte: podmienka v tele cyklu a počítadlo. Napríklad <code>if znak in "aeiouy": samohlasky += 1</code>.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="for a range">
+  <h2>for, alebo while?</h2>
+  <table>
+    <tr><th style="width:26%">Situácia</th><th style="width:16%">Vhodnejší cyklus</th><th>Prečo</th></tr>
+    <tr><td>Vypísať tabuľku pre čísla 1 až 10</td><td><code>for</code></td><td>počet krokov je známy vopred</td></tr>
+    <tr><td>Prejsť všetky znaky slova</td><td><code>for</code></td><td>postupnosť už existuje, jej dĺžka je daná</td></tr>
+    <tr><td>Pýtať sa, kým používateľ nezadá platnú hodnotu</td><td><code>while</code></td><td>počet pokusov sa vopred nedá zistiť</td></tr>
+    <tr><td>Čítať čísla, kým nepríde nula</td><td><code>while</code></td><td>koniec určuje zadaná hodnota, nie počet</td></tr>
+    <tr><td>Deliť číslo dvoma, kým je väčšie ako 1</td><td><code>while</code></td><td>počet krokov závisí od hodnoty</td></tr>
+  </table>
+  <div class="ex p" style="margin-top:13px">Pravidlo: <b>známy počet krokov → <code>for</code></b>, <b>známa podmienka konca → <code>while</code></b>. Prepísať jeden na druhý sa vždy dá, ale čitateľnosť tým zvyčajne trpí.</div>
+</section>
+
+<!-- ═══════════ 3 · RIADENIE CYKLU ═══════════ -->
+<section class="slide divider" data-sec="Riadenie">
+  <div class="num">ČASŤ 03</div>
+  <h1>Riadenie cyklu</h1>
+  <p class="lead">Cyklus sa dá opustiť skôr, ako dobehne, alebo v jednom kroku preskočiť zvyšok tela. Slúžia na to príkazy <code>break</code> a <code>continue</code>.</p>
+</section>
+
+<section class="slide" data-sec="Riadenie">
+  <h2>break a continue v tom istom cykle</h2>
+  <div class="split">
+    <div>
+      <div class="code trace" id="bcCode"><span class="ln"><span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">1</span>, <span class="n">8</span>):</span>
+<span class="ln" id="bcIf">    <span class="k">if</span> i == <span class="n">4</span>:<span class="tag"></span></span>
+<span class="ln" id="bcAct">        <span class="c"># sem sa dopĺňa break alebo continue</span></span>
+<span class="ln" id="bcPr">    <span class="f">print</span>(i)</span>
+<span class="ln"> </span>
+<span class="ln"><span class="f">print</span>(<span class="s">"Koniec"</span>)</span></div>
+      <div class="ctrl" style="margin-top:12px"><span class="lb">v tele</span>
+        <button data-bc="nic">bez ničoho</button>
+        <button data-bc="continue">continue</button>
+        <button data-bc="break">break</button>
+      </div>
+      <div class="outline" id="bcOut">Kliknutím sa vypíše, čo program vypíše.</div>
+    </div>
+    <div>
+      <table>
+        <tr><th style="width:7em">Príkaz</th><th>Čo urobí</th></tr>
+        <tr><td><code>break</code></td><td>ukončí <b>celý cyklus</b> okamžite – nasledujúce kroky sa už nevykonajú</td></tr>
+        <tr><td><code>continue</code></td><td>preskočí <b>zvyšok tela</b> a pokračuje ďalším krokom</td></tr>
+      </table>
+      <div class="ex">Oba príkazy patria takmer vždy do podmienky. Bez nej by <code>break</code> ukončil cyklus v prvom kroku a <code>continue</code> by z tela nevykonal nikdy nič.</div>
+      <div class="ex r">Pri vnorených cykloch platí <code>break</code> len pre ten cyklus, v ktorom je zapísaný. Vonkajší cyklus pokračuje ďalej.</div>
+      <div class="ex p">Riadok <code>print("Koniec")</code> sa vykoná v každom prípade – nie je odsadený, takže do cyklu nepatrí.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Riadenie">
+  <h2>Kde sa break naozaj hodí</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="Hladane cislo: 7
+Nasiel som ho na pozicii 3
+Hotovo">
+      <div class="runhead"><span class="fname">hladanie.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">cisla = [4, 9, 7, 2, 7, 5]
+hladane = int(input("Hladane cislo: "))
+
+pozicia = -1
+for i in range(len(cisla)):
+    if cisla[i] == hladane:
+        pozicia = i + 1
+        break
+
+if pozicia &gt; 0:
+    print("Nasiel som ho na pozicii", pozicia)
+else:
+    print("V zozname nie je")
+
+print("Hotovo")</textarea>
+      <div class="inwrap"><label>Vstup – hľadané číslo</label>
+        <textarea data-stdin spellcheck="false">7</textarea></div>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Pri hľadaní prvého výskytu nemá zmysel prechádzať zvyšok zoznamu. Príkaz <code>break</code> ukončí cyklus vo chvíli, keď je odpoveď známa.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Premenná <code>pozicia</code> sa pripraví na hodnotu, ktorá znamená „nenašlo sa“.</li>
+        <li><code>range(len(cisla))</code> dá indexy položiek – od nuly po počet mínus jeden.</li>
+        <li>Položka sa vyberá zápisom <code>cisla[i]</code>; prvá má index <code>0</code>.</li>
+        <li>Po cykle rozhodne podmienka, čo sa vypíše.</li>
+      </ul>
+      <div class="ex">Bez <code>break</code> by program našiel aj druhú sedmičku a vypísal by pozíciu 5. Skúsiť sa dá zmazaním toho jedného riadka.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Riadenie">
+  <h2>Vnorené cykly</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="1 x 1 = 1
+1 x 2 = 2
+1 x 3 = 3
+---
+2 x 1 = 2
+2 x 2 = 4
+2 x 3 = 6
+---
+3 x 1 = 3
+3 x 2 = 6
+3 x 3 = 9
+---">
+      <div class="runhead"><span class="fname">nasobilka.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">for a in range(1, 4):
+    for b in range(1, 4):
+        print(a, "x", b, "=", a * b)
+    print("---")</textarea>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Telo cyklu môže obsahovať ďalší cyklus. Vnútorný prebehne <b>celý</b> pri každom jednom kroku vonkajšieho.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Počet vykonaní vnútorného tela je súčin počtov krokov – tu 3 × 3 = 9.</li>
+        <li>Každý cyklus má vlastnú premennú. Použiť <code>i</code> pre oba by znamenalo, že si navzájom prepisujú hodnotu.</li>
+        <li>Riadok <code>print("---")</code> je odsadený o jednu úroveň, takže patrí do vonkajšieho cyklu – vykoná sa trikrát.</li>
+      </ul>
+      <div class="ex r">Odsadenie tu rozhoduje o výsledku. Presun riadka o štyri medzery dovnútra alebo von zmení výstup úplne – oplatí sa to vyskúšať.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Riadenie">
+  <h2>Opakované overenie vstupu</h2>
+  <div class="split">
+    <div class="run wide" data-run data-fallback="Vek: abc
+Zadaj cele cislo
+Vek: 200
+Vek musi byt od 1 do 120
+Vek: 17
+Zadany vek je 17">
+      <div class="runhead"><span class="fname">kontrola.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">vek = 0
+
+while vek &lt; 1 or vek &gt; 120:
+    text = input("Vek: ")
+    if not text.isdigit():
+        print("Zadaj cele cislo")
+    elif int(text) &lt; 1 or int(text) &gt; 120:
+        print("Vek musi byt od 1 do 120")
+    else:
+        vek = int(text)
+
+print("Zadany vek je", vek)</textarea>
+      <div class="inwrap"><label>Vstup – tri pokusy, každý na samostatnom riadku</label>
+        <textarea data-stdin spellcheck="false">abc
+200
+17</textarea></div>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Toto je typické spojenie celkov 03 a 04: podmienky rozhodujú, čo je s vstupom zle, a cyklus sa pýta znova, kým nie je v poriadku.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Premenná sa pripraví na hodnotu, pri ktorej podmienka cyklu <b>platí</b> – inak by sa telo nevykonalo ani raz.</li>
+        <li>Platný vstup ukončí cyklus tým, že premennej pridelí hodnotu v rozsahu.</li>
+        <li>Po cykle je isté, že hodnota je použiteľná, a môže sa s ňou počítať.</li>
+      </ul>
+      <div class="ex p">Druhý rovnako bežný zápis je <code>while True:</code> s príkazom <code>break</code> po úspešnom overení. Vyhne sa umelej počiatočnej hodnote.</div>
+      <div class="ex r">Bez cyklu by program pri zlom vstupe skončil, alebo počítal s nesprávnou hodnotou. Opakovanie otázky je to, čo z kontroly robí skutočnú ochranu.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 4 · V PRAXI ═══════════ -->
+<section class="slide divider" data-sec="V praxi">
+  <div class="num">ČASŤ 04</div>
+  <h1>Cykly v praxi</h1>
+  <p class="lead">Spracovanie neznámeho počtu hodnôt, ukončenie zarážkou a prehľad chýb, ktoré stoja najviac času.</p>
+</section>
+
+<section class="slide" data-sec="V praxi">
+  <h2>Súčet, priemer a maximum</h2>
+  <div class="split">
+    <div class="run wide" data-run data-fallback="Cislo (0 = koniec): 12
+Cislo (0 = koniec): 7
+Cislo (0 = koniec): 25
+Cislo (0 = koniec): 0
+Pocet: 3
+Sucet: 44.0
+Priemer: 14.67
+Najvacsie: 25.0">
+      <div class="runhead"><span class="fname">statistika.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">sucet = 0
+pocet = 0
+najvacsie = 0
+
+cislo = float(input("Cislo (0 = koniec): "))
+
+while cislo != 0:
+    sucet = sucet + cislo
+    pocet = pocet + 1
+    if cislo &gt; najvacsie:
+        najvacsie = cislo
+    cislo = float(input("Cislo (0 = koniec): "))
+
+if pocet &gt; 0:
+    print("Pocet:", pocet)
+    print("Sucet:", sucet)
+    print("Priemer:", round(sucet / pocet, 2))
+    print("Najvacsie:", najvacsie)
+else:
+    print("Nebolo zadane ziadne cislo")</textarea>
+      <div class="inwrap"><label>Vstup – hodnoty ukončené nulou</label>
+        <textarea data-stdin spellcheck="false">12
+7
+25
+0</textarea></div>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Hodnota <code>0</code> tu neznamená číslo, ale <b>zarážku</b> – dohodnutý signál, že zadávanie skončilo.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Prvé číslo sa načíta <b>pred</b> cyklom, ďalšie na konci tela. Inak by sa zarážka pripočítala do súčtu.</li>
+        <li>Podmienka <code>if pocet &gt; 0:</code> chráni pred delením nulou, keď používateľ zadá nulu hneď.</li>
+        <li>Maximum sa hľadá tak, že sa každá hodnota porovná s doteraz najväčšou.</li>
+      </ul>
+      <div class="ex r">Nastavenie <code>najvacsie = 0</code> funguje len pre kladné hodnoty. Pri záporných číslach by výsledok bol nesprávny – riešením je použiť prvú zadanú hodnotu.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="V praxi">
+  <h2>while True a break</h2>
+  <div class="split">
+    <div class="run" data-run data-fallback="Prikaz: start
+Neznamy prikaz: start
+Prikaz: stav
+Neznamy prikaz: stav
+Prikaz: koniec
+Program skoncil">
+      <div class="runhead"><span class="fname">ponuka.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">while True:
+    prikaz = input("Prikaz: ")
+    if prikaz == "koniec":
+        break
+    print("Neznamy prikaz:", prikaz)
+
+print("Program skoncil")</textarea>
+      <div class="inwrap"><label>Vstup – príkazy, posledný ukončí program</label>
+        <textarea data-stdin spellcheck="false">start
+stav
+koniec</textarea></div>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <p class="lead">Podmienka <code>True</code> platí vždy, takže cyklus by sám neskončil. Koniec zabezpečuje <code>break</code> vnútri podmienky.</p>
+      <ul class="bul" style="font-size:.94em">
+        <li>Používa sa tam, kde sa podmienka konca dá overiť <b>až v tele</b> – napríklad po prečítaní vstupu.</li>
+        <li>Odpadá umelá počiatočná hodnota premennej len preto, aby podmienka na začiatku platila.</li>
+        <li>Zápis má jednu povinnosť: v tele musí byť cesta k <code>break</code>, ktorá sa dá dosiahnuť.</li>
+      </ul>
+      <div class="ex p">Tento tvar je základ každej ponuky v konzolovej aplikácii – načítať voľbu, rozhodnúť sa podľa nej a pri voľbe „koniec“ cyklus opustiť.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="V praxi">
+  <h2>Chyby, ktoré program nenahlási</h2>
+  <table>
+    <tr><th style="width:36%">Zápis</th><th>Čo sa stane</th><th>Oprava</th></tr>
+    <tr><td><code>range(1, 10)</code> pre čísla 1 až 10</td><td>desiatka chýba, cyklus skončí pri deviatke</td><td><code>range(1, 11)</code></td></tr>
+    <tr><td><code>while i &lt;= 5:</code> bez zmeny <code>i</code></td><td>nekonečný cyklus, program treba prerušiť</td><td>do tela doplniť <code>i += 1</code></td></tr>
+    <tr><td><code>sucet = 0</code> vnútri cyklu</td><td>súčet sa v každom kroku vynuluje</td><td>presunúť riadok pred cyklus</td></tr>
+    <tr><td><code>print(sucet)</code> odsadené v tele</td><td>vypíše sa každý medzivýsledok</td><td>zrušiť odsadenie riadka</td></tr>
+    <tr><td><code>while i &lt; 5:</code> a <code>i = i - 1</code></td><td>hodnota sa mení nesprávnym smerom</td><td><code>i = i + 1</code></td></tr>
+    <tr><td><code>range(5, 1)</code></td><td>nevznikne ani jedna hodnota, telo sa nevykoná</td><td><code>range(5, 0, -1)</code></td></tr>
+  </table>
+  <div class="ex r" style="margin-top:13px">Prvý a posledný riadok sú najzákernejšie – program beží, nič nehlási a len tichu spracuje o jednu hodnotu menej. Odhalí ich jedine kontrola prvého a posledného kroku.</div>
+</section>
+
+<!-- ═══════════ CVIČENIA ═══════════ -->
+<section class="slide" data-sec="Cvičenie">
+  <h2>Koľkokrát sa vykoná telo cyklu?</h2>
+  <p class="lead">Pri každom zápise sa vyberá počet krokov. Vyhodnotenie je okamžité.</p>
+  <div class="panel">
+    <div id="ev1"></div>
+    <div class="score" id="evsc"></div>
+    <div class="fb" id="evfb"></div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Cvičenie">
+  <h2>Čo vypíše tento program?</h2>
+  <div class="split">
+    <div>
+      <div class="code">sucet = <span class="n">0</span>
+
+<span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">1</span>, <span class="n">5</span>):
+    <span class="k">if</span> i == <span class="n">3</span>:
+        <span class="k">continue</span>
+    sucet = sucet + i
+
+<span class="f">print</span>(sucet)</div>
+      <p class="small" style="margin-top:.8em">Cyklus prejde hodnoty 1, 2, 3 a 4. Jedna z nich sa do súčtu nedostane.</p>
+    </div>
+    <div id="q1">
+      <button class="opt" data-j="0">10</button>
+      <button class="opt" data-j="1">7</button>
+      <button class="opt" data-j="2">6</button>
+      <button class="opt" data-j="3">3</button>
+      <div class="fb"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Cvičenie">
+  <h2>Doplniť chýbajúce miesta</h2>
+  <p class="lead">Program má vypísať čísla od 1 do 10 vrátane a na konci ich súčet.</p>
+  <div class="panel">
+    <div class="code" style="font-size:.86em">sucet = <input class="blank" data-a="0" style="width:3.2em" placeholder="?" spellcheck="false">
+
+<span class="k">for</span> i <span class="k">in</span> <input class="blank" data-a="range" style="width:5.2em" placeholder="?" spellcheck="false">(<span class="n">1</span>, <input class="blank" data-a="11" style="width:3.4em" placeholder="?" spellcheck="false">):
+    <span class="f">print</span>(i)
+    sucet = sucet <input class="blank" data-a="+" style="width:2.8em" placeholder="?" spellcheck="false"> i
+
+<span class="f">print</span>(<span class="s">"Sucet:"</span>, sucet)</div>
+    <div style="display:flex;gap:9px;margin-top:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="chk">Skontrolovať</button>
+      <button class="btn ghost" id="clr">Vymazať</button>
+      <span class="score" id="sc2"></span>
+    </div>
+    <div class="fb" id="fb2"></div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Cvičenie">
+  <h2>Vlastný program</h2>
+  <p class="lead">Tabuľka násobkov zadaného čísla. Kód sa dá prepísať, hodnota vstupu sa mení v políčku pod ním.</p>
+  <div class="split">
+    <div class="run wide" data-run data-fallback="Cislo: 7
+7 x 1 = 7
+7 x 2 = 14
+7 x 3 = 21
+7 x 4 = 28
+7 x 5 = 35
+7 x 6 = 42
+7 x 7 = 49
+7 x 8 = 56
+7 x 9 = 63
+7 x 10 = 70
+Sucet nasobkov: 385">
+      <div class="runhead"><span class="fname">nasobky.py</span><span class="sp"></span>
+        <button class="btn sm" data-act="run">▶ Spustiť</button>
+        <button class="btn sm ghost" data-act="reset">Pôvodný kód</button></div>
+      <textarea spellcheck="false">cislo = int(input("Cislo: "))
+sucet = 0
+
+for i in range(1, 11):
+    nasobok = cislo * i
+    print(cislo, "x", i, "=", nasobok)
+    sucet = sucet + nasobok
+
+print("Sucet nasobkov:", sucet)</textarea>
+      <div class="inwrap"><label>Vstup – číslo</label>
+        <textarea data-stdin spellcheck="false">7</textarea></div>
+      <div class="out"><span class="ph">Výstup sa zobrazí po spustení.</span></div>
+    </div>
+    <div>
+      <div class="card p"><h3>Námety na úpravu</h3>
+        <ul class="bul" style="margin-top:.4em;font-size:.93em">
+          <li>Vypísať len násobky, ktoré sú párne – podmienkou v tele cyklu.</li>
+          <li>Zmeniť rozsah tak, aby tabuľka išla od 10 po 1, teda záporným krokom.</li>
+          <li>Doplniť druhý cyklus a vypísať celú malú násobilku.</li>
+          <li>Prepísať <code>for</code> na <code>while</code> s vlastným počítadlom a porovnať, ktorý zápis je čitateľnejší.</li>
+          <li>Namiesto pevného rozsahu sa dá počet riadkov tabuľky tiež načítať od používateľa.</li>
+        </ul></div>
+      <div class="ex r" style="margin-top:12px">Pri zmene na <code>range(1, 10)</code> zmizne posledný riadok tabuľky a súčet bude iný. Tá chyba nespôsobí žiadnu hlášku – všimnúť si ju treba samo.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-sec="Zhrnutie" id="sumSlide">
+  <h2>Zhrnutie</h2>
+  <ul class="bul" style="font-size:1.03em;margin-top:.4em">
+    <li>Cyklus <code>while</code> opakuje telo, kým platí podmienka – a jeho koniec musí niečo v tele zabezpečiť.</li>
+    <li>Každý cyklus má štyri časti: prípravu, podmienku, telo a zmenu, ktorá vedie ku koncu.</li>
+    <li>Cyklus <code>for</code> sa používa pri známom počte krokov; <code>range(a, b)</code> hornú hranicu <b>nezahŕňa</b>.</li>
+    <li>Súčet aj počítadlo sa pripravujú <b>pred</b> cyklom a výpis patrí <b>za</b> cyklus.</li>
+    <li><code>break</code> ukončí celý cyklus, <code>continue</code> preskočí zvyšok tela jedného kroku.</li>
+    <li>Vo vnorených cykloch prebehne vnútorný cyklus celý pri každom kroku vonkajšieho.</li>
+    <li>Opakované overenie vstupu spája podmienky z celku 03 s cyklom – program sa pýta, kým nedostane použiteľnú hodnotu.</li>
+  </ul>
+  <div class="ex p" style="margin-top:14px">Ďalší krok: uloženie viacerých hodnôt do zoznamu, aby sa dali spracovať aj po skončení zadávania.</div>
+</section>
+
+</div>
+
+<div id="nav">
+  <button id="prev" title="Predchádzajúci slide">‹</button>
+  <button id="next" title="Ďalší slide">›</button>
+</div>
+<div id="hint">← → prepínanie · F celá obrazovka · C čítanie nahlas</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+/* ============ spúšťanie Pythonu (Pyodide) ============ */
+const PYURL='https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+let _py=null;
+function pyReady(){
+  if(_py)return _py;
+  _py=new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=PYURL+'pyodide.js';
+    s.onload=()=>{loadPyodide({indexURL:PYURL}).then(res,rej);};
+    s.onerror=()=>rej(new Error('CDN'));
+    document.head.appendChild(s);
+  });
+  return _py;
+}
+const RUNNER=`
+import sys, io, builtins, traceback, linecache
+_out = io.StringIO()
+_o, _e = sys.stdout, sys.stderr
+sys.stdout = sys.stderr = _out
+linecache.cache["program.py"] = (len(_usercode), None, _usercode.splitlines(True), "program.py")
+_it = iter(_userin.split("\\n"))
+def _inp(prompt=""):
+    try: v = next(_it)
+    except StopIteration: v = ""
+    print(str(prompt) + v)
+    return v
+builtins.input = _inp
+class _TooLong(Exception): pass
+_n = 0
+def _tr(frame, event, arg):
+    global _n
+    _n += 1
+    if _n > 400000:
+        sys.settrace(None)
+        raise _TooLong()
+    return _tr
+try:
+    _c = compile(_usercode, "program.py", "exec")
+    sys.settrace(_tr)
+    exec(_c, {"__name__": "__main__"})
+except _TooLong:
+    sys.settrace(None)
+    print("\\n[zastavené] Program beží príliš dlho – pravdepodobne nekonečný cyklus.")
+except BaseException as _ex:
+    sys.settrace(None)
+    _t = _ex.__traceback__
+    print("".join(traceback.format_exception(type(_ex), _ex, _t.tb_next if _t else None)), end="")
+finally:
+    sys.settrace(None)
+    sys.stdout, sys.stderr = _o, _e
+_out.getvalue()
+`;
+async function runPython(code,stdin){
+  const py=await pyReady();
+  py.globals.set('_usercode',code);
+  py.globals.set('_userin',stdin||'');
+  let r=await py.runPythonAsync(RUNNER);
+  r=String(r==null?'':r);
+  if(r.length>6000)r=r.slice(0,6000)+'\n… (výstup skrátený)';
+  return r;
+}
+document.querySelectorAll('[data-run]').forEach(box=>{
+  const ta=box.querySelector('textarea:not([data-stdin])');
+  const si=box.querySelector('textarea[data-stdin]');
+  const out=box.querySelector('.out');
+  const btn=box.querySelector('[data-act="run"]');
+  const rst=box.querySelector('[data-act="reset"]');
+  const orig=ta.value, origIn=si?si.value:'';
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();
+      const s=ta.selectionStart,en=ta.selectionEnd;
+      ta.value=ta.value.slice(0,s)+'    '+ta.value.slice(en);
+      ta.selectionStart=ta.selectionEnd=s+4;}
+  });
+  rst.addEventListener('click',()=>{ta.value=orig;if(si)si.value=origIn;
+    out.innerHTML='<span class="ph">Výstup sa zobrazí po spustení.</span>';});
+  btn.addEventListener('click',async()=>{
+    btn.disabled=true;
+    const first=!_py;
+    out.innerHTML='<span class="load">'+(first?'Načítava sa Python – prvé spustenie trvá pár sekúnd…':'Program beží…')+'</span>';
+    try{
+      const r=await runPython(ta.value,si?si.value:'');
+      out.textContent=r.length?r:'(program nič nevypísal)';
+      if(/Error|Traceback/.test(r)){out.innerHTML='';
+        const sp=document.createElement('span');sp.className='err';sp.textContent=r;out.appendChild(sp);}
+    }catch(err){
+      const fb=box.dataset.fallback;
+      out.innerHTML='';
+      const s1=document.createElement('span');
+      s1.textContent=fb!==undefined?fb:'(bez pripojenia na internet sa Python spustiť nedá)';
+      out.appendChild(s1);
+      const s2=document.createElement('span');s2.className='note';
+      s2.textContent='Interpret sa nepodarilo načítať – zobrazený je očakávaný výstup. Živé spúšťanie potrebuje pripojenie na internet.';
+      out.appendChild(s2);
+    }finally{btn.disabled=false;}
+  });
+});
+
+/* ============ krokovanie súčtu ============ */
+(function(){
+  const box=$('stepBox');
+  function run(n){
+    let sucet=0,rows='';
+    for(let i=1;i<=n;i++){
+      sucet+=i;
+      rows+='<tr><td>'+i+'. krok</td><td>'+i+'</td><td>'+sucet+'</td></tr>';
+    }
+    rows+='<tr class="last"><td>po cykle</td><td>'+(n+1)+'</td><td>'+sucet+'</td></tr>';
+    box.innerHTML='<table class="steps"><tr><th>Krok</th><th>i</th><th>sucet</th></tr>'+rows+'</table>'+
+      '<p class="small" style="margin-top:.6em">Podmienka <code>i &lt;= '+n+'</code> sa vyhodnotila '+(n+1)+
+      '-krát – pri poslednom vyhodnotení už neplatila a cyklus skončil. Výpis: <code>Sucet: '+sucet+'</code></p>';
+  }
+  document.querySelectorAll('[data-st]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-st]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    run(+b.dataset.st);
+  }));
+})();
+
+/* ============ prehliadka range ============ */
+(function(){
+  const box=$('rgVals'),note=$('rgNote');
+  function vals(a){
+    let start=0,stop=0,step=1;
+    if(a.length===1){stop=a[0];}
+    else{start=a[0];stop=a[1];if(a.length>2)step=a[2];}
+    const out=[];
+    if(step>0){for(let i=start;i<stop;i+=step)out.push(i);}
+    else{for(let i=start;i>stop;i+=step)out.push(i);}
+    return out;
+  }
+  document.querySelectorAll('[data-rg]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-rg]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const a=b.dataset.rg.split(',').map(Number),v=vals(a);
+    if(!v.length){
+      box.innerHTML='<span class="none">žiadna hodnota – telo cyklu sa nevykoná ani raz</span>';
+      note.innerHTML='Zápis <code>'+b.textContent+'</code> nevytvorí nič. Pri klesajúcej postupnosti treba záporný krok.';
+      return;
+    }
+    box.innerHTML=v.map(x=>'<span>'+x+'</span>').join('');
+    note.innerHTML='Počet krokov: <b>'+v.length+'</b> · prvá hodnota <code>'+v[0]+
+      '</code> · posledná hodnota <code>'+v[v.length-1]+'</code>. Horná hranica v zápise medzi hodnotami nie je.';
+  }));
+})();
+
+/* ============ break a continue ============ */
+(function(){
+  const out=$('bcOut'),act=$('bcAct'),ifLn=$('bcIf'),prLn=$('bcPr');
+  const TXT={
+    nic:'        <span class="c"># nič sa nedeje</span>',
+    continue:'        <span class="k">continue</span>',
+    break:'        <span class="k">break</span>'
+  };
+  function run(mode){
+    act.innerHTML=TXT[mode];
+    ifLn.classList.remove('dim','no','yes');prLn.classList.remove('dim','no','yes');
+    const vyp=[];
+    for(let i=1;i<8;i++){
+      if(i===4){
+        if(mode==='break')break;
+        if(mode==='continue')continue;
+      }
+      vyp.push(i);
+    }
+    if(mode==='break'){ifLn.classList.add('yes');prLn.classList.add('no');}
+    if(mode==='continue'){ifLn.classList.add('yes');}
+    const popis={
+      nic:'Podmienka pri i = 4 nič nezmení, cyklus prejde všetkých sedem krokov.',
+      continue:'Pri i = 4 sa preskočí zvyšok tela, takže štvorka sa nevypíše – cyklus však pokračuje ďalej.',
+      break:'Pri i = 4 sa cyklus ukončí celý, takže hodnoty 4 až 7 sa nevypíšu vôbec.'
+    };
+    out.textContent='výstup:\n'+vyp.join('\n')+'\nKoniec\n\nkrokov, v ktorých sa telo začalo: '+
+      (mode==='break'?4:7)+' · vypísaných čísel: '+vyp.length+'\n'+popis[mode];
+  }
+  document.querySelectorAll('[data-bc]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-bc]').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    run(b.dataset.bc);
+  }));
+})();
+
+/* ============ cvičenie: koľkokrát sa vykoná telo ============ */
+(function(){
+  const data=[
+    ['for i in range(5):',        '5',  ['4','5','6'],      'Päť hodnôt od nuly po štvorku. Horná hranica sa nezahŕňa, ale nula sa počíta.'],
+    ['for i in range(1, 5):',     '4',  ['3','4','5'],      'Hodnoty 1, 2, 3, 4 – hranica 5 už nepatrí dovnútra.'],
+    ['for i in range(1, 11):',    '10', ['9','10','11'],    'Presne desať krokov. Toto je správny zápis pre čísla 1 až 10.'],
+    ['for i in range(0, 20, 5):', '4',  ['3','4','5'],      'Hodnoty 0, 5, 10 a 15. Dvadsiatka je hranica, takže sa nepoužije.'],
+    ['for i in range(5, 1):',     '0',  ['0','1','4'],      'Bez záporného kroku nevznikne žiadna hodnota – telo sa nevykoná ani raz a program nič nehlási.'],
+    ['for i in range(10, 0, -1):','10', ['9','10','11'],    'Od desiatky po jednotku. Hranica 0 sa nezahŕňa.'],
+    ['for znak in "cyklus":',     '6',  ['5','6','7'],      'Slovo má šesť znakov, takže šesť krokov.'],
+    ['i = 1\\nwhile i <= 4:\\n&nbsp;&nbsp;&nbsp;&nbsp;i += 1','4',['3','4','5'],'Podmienka sa vyhodnotí päťkrát, ale telo sa vykoná štyrikrát – pri i = 5 už podmienka neplatí.'],
+    ['for a in range(3):\\n&nbsp;&nbsp;&nbsp;&nbsp;for b in range(4):','12',['7','12','3'],'Vnútorné telo sa vykoná 3 × 4 = 12-krát. Počty krokov sa násobia, nie sčítavajú.']
+  ];
+  const box=$('ev1'),sc=$('evsc'),fb=$('evfb');
+  let hotovo=0,spravne=0;
+  data.forEach(d=>{
+    const row=document.createElement('div');row.className='evrow';
+    row.innerHTML='<span class="expr">'+d[0].replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\\n/g,'<br>')+
+      '</span><span class="btns">'+
+      d[2].map(v=>'<button data-v="'+v+'">'+v+'×</button>').join('')+'</span>';
+    box.appendChild(row);
+    row.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+      const good=b.dataset.v===d[1];
+      row.querySelectorAll('button').forEach(x=>{
+        x.disabled=true;
+        if(x.dataset.v===d[1])x.classList.add('good');
+      });
+      if(!good)b.classList.add('bad');
+      row.classList.add(good?'ok':'no');
+      hotovo++;if(good)spravne++;
+      sc.textContent='Vyriešené '+hotovo+' z '+data.length+' · správne '+spravne;
+      fb.className='fb show '+(good?'ok':'no');
+      fb.innerHTML=(good?'✅ ':'❌ správne je <code>'+d[1]+'×</code> – ')+d[3];
+    }));
+  });
+})();
+
+/* ============ cvičenie: čo vypíše ============ */
+(function(){
+  const box=$('q1'),fb=box.querySelector('.fb'),C=1;
+  const e=['Do súčtu by sa dostali všetky štyri hodnoty – to by platilo bez príkazu <code>continue</code>.',
+    'Presne tak. Trojka sa preskočí, takže sa spočíta 1 + 2 + 4, čo je 7.',
+    'Takto by to vyšlo, keby sa preskočila štvorka. Podmienka však hovorí <code>i == 3</code>.',
+    'Šesť by bol súčet 1 + 2 + 3. Príkaz <code>continue</code> ukončuje len jeden krok, nie celý cyklus – na to je <code>break</code>.'];
+  box.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    const j=+b.dataset.j,good=j===C;
+    box.querySelectorAll('.opt').forEach((x,k)=>{x.disabled=true;if(k===C)x.classList.add('ok');});
+    if(!good)b.classList.add('no');
+    fb.className='fb show '+(good?'ok':'no');
+    fb.innerHTML=(good?'✅ ':'❌ ')+e[j];
+  }));
+})();
+
+/* ============ cvičenie: doplňovačka ============ */
+(function(){
+  const ins=[...document.querySelectorAll('.blank')],fb=$('fb2'),sc=$('sc2');
+  $('chk').addEventListener('click',()=>{
+    let ok=0;
+    ins.forEach(i=>{
+      const good=i.value.trim()===i.dataset.a;
+      i.classList.toggle('ok',good);i.classList.toggle('no',!good);
+      if(good)ok++;
+    });
+    sc.textContent='Správne '+ok+' zo '+ins.length;
+    fb.className='fb show '+(ok===ins.length?'ok':'no');
+    fb.innerHTML=ok===ins.length
+      ? '✅ Sedí to. Súčet sa pripravuje na nulu, hodnoty dáva <code>range</code>, na čísla 1 až 10 treba hranicu <code>11</code> a v tele sa pripočítava – <code>sucet + i</code>, skrátene <code>sucet += i</code>.'
+      : '❌ Správne doplnenie zhora: <code>0</code>, <code>range</code>, <code>11</code> a <code>+</code>. Pri hranici <code>10</code> by desiatka v tabuľke chýbala a súčet by bol 45 namiesto 55.';
+  });
+  $('clr').addEventListener('click',()=>{
+    ins.forEach(i=>{i.value='';i.classList.remove('ok','no');});
+    fb.className='fb';sc.textContent='';
+  });
+})();
+
+/* ============ opakovacie otázky ============ */
+const review=[
+  {q:"Čo sa stane, keď v tele cyklu while chýba zmena premennej z podmienky?",
+   o:["Cyklus sa vykoná raz","Vznikne nekonečný cyklus","Program ohlási SyntaxError","Cyklus sa preskočí"],c:1,
+   e:"Podmienka platí stále, takže program treba prerušiť. V PyCharme klávesmi <code>Ctrl + F2</code>."},
+  {q:"Ktoré hodnoty prejde cyklus for i in range(1, 5)?",
+   o:["1, 2, 3, 4, 5","1, 2, 3, 4","0, 1, 2, 3, 4","1, 5"],c:1,
+   e:"Horná hranica sa nezahŕňa. Na čísla 1 až 5 treba <code>range(1, 6)</code>."},
+  {q:"Aký je rozdiel medzi break a continue?",
+   o:["Žiadny, sú to synonymá","break ukončí celý cyklus, continue preskočí zvyšok jedného kroku","break preskočí krok, continue ukončí cyklus","Oba ukončia program"],c:1,
+   e:"<code>break</code> z cyklu vystúpi, <code>continue</code> v ňom zostane a len nedokončí telo daného kroku."},
+  {q:"Kde má byť riadok sucet = 0, keď sa v cykle sčítava?",
+   o:["Pred cyklom","V tele cyklu","Za cyklom","Nezáleží na tom"],c:0,
+   e:"V tele by sa hodnota v každom kroku vynulovala a výsledkom by bola len posledná pripočítaná hodnota."},
+  {q:"Koľkokrát sa vykoná vnútorné telo pri for a in range(3): for b in range(4):?",
+   o:["7-krát","12-krát","3-krát","4-krát"],c:1,
+   e:"Počty krokov sa násobia: 3 × 4 = 12. Vnútorný cyklus prebehne celý pri každom kroku vonkajšieho."},
+  {q:"Kedy je vhodnejší cyklus while ako for?",
+   o:["Vždy, while je univerzálnejší","Keď počet krokov nie je vopred známy","Keď sa prechádza text","Keď sa počíta od nuly"],c:1,
+   e:"Typický príklad je opakovaná otázka na vstup – počet pokusov sa vopred zistiť nedá. Pri známom počte krokov je čitateľnejší <code>for</code>."},
+  {q:"Čo vykoná cyklus for i in range(5, 1)?",
+   o:["Vypíše 5, 4, 3, 2","Vypíše 5 a 1","Telo sa nevykoná ani raz","Ohlási chybu"],c:2,
+   e:"Bez záporného kroku nevznikne žiadna hodnota. Program nič nehlási, len sa nič nestane – správne je <code>range(5, 1, -1)</code>."}
+];
+const deck=$('deck'),sumS=$('sumSlide');
+review.forEach((r,i)=>{
+  const s=document.createElement('section');s.className='slide';s.dataset.sec='Opakovanie';
+  s.innerHTML='<div class="eyebrow">Opakovacia otázka '+(i+1)+' / '+review.length+'</div>'+
+    '<h2 style="font-size:clamp(1.22em,2.4vw,1.7em)">'+r.q+'</h2><div style="margin-top:1em">'+
+    r.o.map((t,j)=>'<button class="opt" data-j="'+j+'">'+t+'</button>').join('')+'</div><div class="fb"></div>';
+  deck.insertBefore(s,sumS);
+  const fb=s.querySelector('.fb');
+  s.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    const good=+b.dataset.j===r.c;
+    s.querySelectorAll('.opt').forEach((x,j)=>{x.disabled=true;if(j===r.c)x.classList.add('ok');});
+    if(!good)b.classList.add('no');
+    fb.className='fb show '+(good?'ok':'no');
+    fb.innerHTML=(good?'✅ <b>Správne.</b> ':'❌ <b>Nie celkom.</b> ')+r.e;
+  }));
+});
+
+/* ============ ovládanie prezentácie ============ */
+const slides=[...document.querySelectorAll('.slide')];
+let i=0;
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('on',k===i));
+  $('secName').textContent=slides[i].dataset.sec||'Cykly';
+  $('cnt').textContent=(i+1)+' / '+slides.length;
+  $('prog').style.width=((i+1)/slides.length*100)+'%';
+  slides[i].scrollTop=0;
+  try{history.replaceState(null,'','#'+(i+1));}catch(e){}
+}
+$('next').onclick=()=>show(i+1);
+$('prev').onclick=()=>show(i-1);
+addEventListener('keydown',e=>{
+  if(e.target.matches('input,textarea,select,button'))return;
+  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();show(i+1);}
+  if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();show(i-1);}
+  if(e.key==='Home')show(0); if(e.key==='End')show(slides.length-1);
+  if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
+});
+let tx=0,swipeOk=false;
+addEventListener('touchstart',e=>{
+  swipeOk=!e.target.closest('.nodrag,.panel,.run,.ctrl,input,textarea,button,table');
+  tx=e.changedTouches[0].clientX;},{passive:true});
+addEventListener('touchend',e=>{
+  if(!swipeOk)return;
+  const d=e.changedTouches[0].clientX-tx;
+  if(Math.abs(d)>70) d<0?show(i+1):show(i-1);},{passive:true});
+show(location.hash?parseInt(location.hash.slice(1))-1||0:0);
+
+/* ============ čítanie nahlas ============ */
+(function(){
+  const S=window.speechSynthesis,btn=$('ttsBtn'),lbl=$('ttsLbl');
+  if(!S||!btn){if(btn)btn.style.display='none';return;}
+  let voice=null,list=[],pos=0,state='idle',warned=false;
+  const pickVoice=()=>{const v=S.getVoices();
+    voice=v.find(x=>/^sk/i.test(x.lang))||v.find(x=>/^cs/i.test(x.lang))||null;};
+  pickVoice();S.addEventListener('voiceschanged',pickVoice);
+  const clean=e=>{const c=e.cloneNode(true);
+    c.querySelectorAll('button,input,textarea,select,svg,canvas,table,.code,.run,.ctrl,.outline,.vals,.steps,.evrow,.noread')
+      .forEach(n=>n.remove());
+    return c.textContent.replace(/\s+/g,' ').trim();};
+  function collect(root){
+    const all=[...root.querySelectorAll('h1,h2,h3,h4,p,li,.ex')],set=new Set(all);
+    return all.filter(e=>{
+      let a=e.parentElement;
+      while(a&&a!==root){if(set.has(a))return false;a=a.parentElement;}
+      return clean(e).length>1;
+    });
+  }
+  function mark(e){
+    document.querySelectorAll('.speaking').forEach(n=>n.classList.remove('speaking'));
+    if(e){e.classList.add('speaking');e.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  }
+  function ui(){
+    lbl.textContent=state==='play'?'Pauza':state==='pause'?'Pokračovať':'Čítať';
+    btn.classList.toggle('active',state!=='idle');
+    btn.classList.toggle('playing',state==='play');
+    btn.classList.toggle('paused',state==='pause');
+  }
+  function next(){
+    if(state!=='play')return;
+    if(pos>=list.length){stop();return;}
+    const e=list[pos],u=new SpeechSynthesisUtterance(clean(e));
+    mark(e);
+    u.lang='sk-SK';if(voice)u.voice=voice;u.rate=.97;
+    u.onend=()=>{pos++;next();};
+    u.onerror=()=>{pos++;next();};
+    S.speak(u);
+  }
+  function start(){
+    S.cancel();list=collect(slides[i]);pos=0;
+    if(!list.length)return;
+    state='play';ui();notice();next();
+  }
+  function stop(){state='idle';S.cancel();mark(null);ui();}
+  function notice(){
+    if(warned)return;warned=true;
+    if(voice&&/^sk/i.test(voice.lang))return;
+    const d=document.createElement('div');d.className='ttsnote';
+    d.textContent=voice
+      ? 'Slovenský hlas nie je v systéme nainštalovaný, text číta hlas „'+voice.name+'“.'
+      : 'V systéme nie je nainštalovaný slovenský hlas. Doplniť sa dá v Nastavenia → Čas a jazyk → Reč.';
+    document.body.appendChild(d);
+    setTimeout(()=>d.remove(),8000);
+  }
+  btn.onclick=()=>{
+    if(state==='idle')start();
+    else if(state==='play'){state='pause';S.pause();ui();}
+    else{state='play';S.resume();ui();}
+  };
+  addEventListener('keydown',e=>{
+    if(e.target.matches('input,textarea,select,button'))return;
+    if(e.key==='c'||e.key==='C'){e.preventDefault();btn.onclick();}
+  });
+  const orig=show;
+  show=function(n){stop();orig(n);};
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  addEventListener('beforeunload',()=>S.cancel());
+  ui();
+})();
+</script>
+</body>
+</html>
